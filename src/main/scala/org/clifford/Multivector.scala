@@ -30,7 +30,7 @@ object Multivector {
     i = i | (i >> 2)
     i = i | (i >> 4)
     i = i | (i >> 8)
-    i = i | (i >>16)
+    i = i | (i >> 16)
     BasisBlade.bitCount(~i)
   }
 
