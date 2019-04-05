@@ -1,0 +1,245 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.clifford</groupId>
+  <artifactId>clifford</artifactId>
+  <packaging>pom</packaging>
+  <name>clifford</name>
+  <url></url>
+  <version>1.0.0</version>
+
+  <modules>
+    <module>cross/2.11</module>
+    <module>cross/2.12</module>
+    <!-- <module>cross/2.13</module> breeze doesn't support 2.13 yet --> 
+  </modules>
+
+  <properties>
+    <!-- Resource identity sequence. -->
+<!--    <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format> -->
+    <maven.build.timestamp.format></maven.build.timestamp.format>
+    
+    <!-- Streaming release version. -->
+    <release.epoch>1.0.0</release.epoch>
+    <release.stamp>${maven.build.timestamp}</release.stamp>
+    <!--    <revision>${release.epoch}.${release.stamp}</revision> -->
+    <revision>${release.epoch}</revision>
+
+    <!-- Must override in each cross-version module. -->
+    <version.scala.simple.epoch>2.11</version.scala.simple.epoch>
+    <version.scala.epoch>2.11</version.scala.epoch>
+    <version.scala.release>2.11.12</version.scala.release>
+    
+    <version.scala.zinc>1.3.0-M2</version.scala.zinc>
+    <version.scala.plugin.macro>2.1.1</version.scala.plugin.macro>
+    
+    <!-- Scala.js tool stack. -->
+    <notavailable.scalajs>true</notavailable.scalajs>
+    <version.scalajs.epoch>0.6</version.scalajs.epoch>
+    <version.scalajs.release>0.6.26</version.scalajs.release>
+    <version.scalajs.library>sjs${version.scalajs.epoch}_${version.scala.epoch}</version.scalajs.library>
+
+    <!-- Scala.native tool stack. -->
+    <version.scalanat.epoch>0.3</version.scalanat.epoch>
+    <version.scalanat.release>0.3.8</version.scalanat.release>
+    <version.scalanat.library>native${version.scalanat.epoch}_${version.scala.epoch}</version.scalanat.library>
+    <version.scala.plugin.native>${version.scalanat.release}</version.scala.plugin.native>
+
+    <!-- Java epoch. -->
+    <version.java>1.8</version.java>
+    <maven.compiler.source>${version.java}</maven.compiler.source><!-- Used by M2E. -->
+    <maven.compiler.target>${version.java}</maven.compiler.target><!-- Used by M2E. -->
+
+    <!-- scalatest -->
+    <version.scalatest>3.0.6</version.scalatest>
+
+    <!-- JUnit 4 Testing for JS -->
+    <version.junit4>4.12</version.junit4>
+    <version.maven.testing>2.22.1</version.maven.testing>
+    
+    <!-- File format. -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${version.scala.release}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalanlp</groupId>
+      <artifactId>breeze_${version.scala.epoch}</artifactId>
+      <version>0.13.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_${version.scala.epoch}</artifactId>
+      <version>${version.scalatest}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalacheck</groupId>
+      <artifactId>scalacheck_${version.scala.epoch}</artifactId>
+      <version>1.14.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <!-- Disable default compiler. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <skip>true</skip>
+          <skipMain>true</skipMain>
+        </configuration>
+      </plugin>
+      
+      <!-- Enable alternative compiler. -->
+      <plugin>
+        <groupId>com.carrotgarden.maven</groupId>
+        <artifactId>scalor-maven-plugin_2.12</artifactId>
+	<!-- <version>1.4.2.20180508161326</version> -->
+	
+        <configuration>
+	  
+          <!-- <skipLogReason>true</skipLogReason> -->
+	  
+          <!-- <nativeLogClassPath>true</nativeLogClassPath> -->
+          <!-- <nativeLogBuildProcs>true</nativeLogBuildProcs> -->
+          <!-- <nativeLogBuildVerts>true</nativeLogBuildVerts> -->
+          <!-- <nativeLogBuildStats>true</nativeLogBuildStats> -->
+          <!-- <nativeLogBuildTimes>true</nativeLogBuildTimes> -->
+
+	  <defineBridge>
+            <dependency>
+              <groupId>org.scala-sbt</groupId>
+              <artifactId>compiler-bridge_${version.scala.epoch}</artifactId>
+              <version>${version.scala.zinc}</version>
+            </dependency>
+          </defineBridge>
+	  
+          <zincOptionsScala>
+            -Xsource:${version.scala.epoch}
+            -withVersionClasspathValidator:false
+            -compileorder:Mixed
+	    -language:implicitConversions
+	    -usejavacp
+          </zincOptionsScala>
+	  
+          <defineCompiler>
+            <dependency>
+              <groupId>org.scala-lang</groupId>
+              <artifactId>scala-compiler</artifactId>
+              <version>${version.scala.release}</version>
+            </dependency>
+          </defineCompiler>
+	  
+          <definePluginList>
+            <!-- Support for macro type provider. -->
+	    <!--
+            <dependency>
+              <groupId>org.scalamacros</groupId>
+              <artifactId>paradise_${version.scala.release}</artifactId>
+              <version>${version.scala.plugin.macro}</version>
+            </dependency>
+	    -->
+            <!-- Generate Scala.native *.nir classes. -->
+	    <!--
+            <dependency>
+              <groupId>org.scala-native</groupId>
+              <artifactId>nscplugin_${version.scala.release}</artifactId>
+              <version>${version.scalanat.release}</version>
+	      <optional>${notavailable.scalanat}</optional>
+            </dependency>
+	    -->
+          </definePluginList>
+	  
+        </configuration>
+	
+        <executions>
+          <execution>
+	    <id>scala-build</id>
+	    <inherited>false</inherited>
+            <goals>
+
+              <!-- Enable eclipse for manual project testing. -->
+              <!-- <goal>eclipse-config</goal> -->
+	      
+              <!-- <goal>register-macro</goal> -->
+              <goal>register-main</goal>
+              <goal>register-test</goal>
+	      
+              <!-- <goal>compile-macro</goal> -->
+              <goal>compile-main</goal>
+              <goal>compile-test</goal>
+
+	      <!-- doesn't seem to want to compile, seems to be missing basic
+		   JVM stuff it needs 
+              <goal>scala-native-link-main</goal>
+              <goal>scala-native-link-test</goal>
+	      
+              <goal>scala-native-pack-main</goal>
+              <goal>scala-native-pack-test</goal>
+	      -->
+
+	      <!-- scala-js compiler doesn't work for 2.13, likely due to
+		   mismatched verisions
+	      <goal>scala-js-link-main</goal>
+              <goal>scala-js-link-test</goal>
+
+              <goal>scala-js-env-prov-webjars</goal>
+              <goal>scala-js-env-prov-nodejs</goal>
+              <goal>scala-js-env-conf-nodejs</goal>
+	      -->
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- enable scalatest -->
+      <plugin>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest-maven-plugin</artifactId>
+        <version>1.0</version>
+        <configuration>
+          <reportsDirectory>${project.build.directory}/jvm-surefire-reports</reportsDirectory>
+          <junitxml>.</junitxml>
+          <filereports>Clifford-TestSuite.txt</filereports>
+	  <parallel>false</parallel>
+        </configuration>
+        <executions>
+          <execution>
+            <id>test</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.4.4</version>
+        <configuration>
+          <jvmArgs>
+            <jvmArg>-Xms64m</jvmArg>
+            <jvmArg>-Xmx1024m</jvmArg>
+          </jvmArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>
