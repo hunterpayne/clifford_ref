@@ -5,6 +5,9 @@ import scala.collection.mutable.Buffer
 
 object BasisBlade {
 
+  /**
+    * @return the number of 1 bits in <code>i</code>
+    */
   def bitCount(arg: Int): Int = {
     var i = arg
     // Note that unsigned shifting (>>>) is not required.
@@ -62,6 +65,28 @@ object BasisBlade {
     BasisBlade(bitmap, sign * a.scale * b.scale)
   }
 
+  def geometricProduct(
+    a: BasisBlade, b: BasisBlade, arr: Array[Double]): BasisBlade = {
+    // compute the geometric product in Euclidean metric:
+    val result = geometricProduct(a, b)
+
+    // compute the meet (bitmap of annihilated vectors):
+    var bitmap = a.bitmap & b.bitmap
+
+    var newScale = result.scale
+
+    // change the scale according to the metric
+    var i: Int = 0
+    while (bitmap != 0) {
+      if ((bitmap & 1) != 0) newScale = newScale * arr(i)
+      i = i + 1
+      bitmap = bitmap >> 1
+    }
+
+    BasisBlade(result.bitmap, newScale)
+  }
+
+
   /**
     * Computes the geometric product of two basis blades in limited 
     * non-Euclidean metric.
@@ -71,9 +96,10 @@ object BasisBlade {
     implicit metric: Metric): Seq[BasisBlade] = {
     val aB = metric.toEigenbasis(a)
     val bB = metric.toEigenbasis(b)
+    val metricArr = metric.eigenMetric.data
 
     metric.toMetricBasis(simplify(
-      (for { c <- aB; d <- bB } yield geometricProductM(c, d)).flatten
+      for { c <- aB; d <- bB } yield geometricProduct(c, d, metricArr)
     ))
   }
 
@@ -286,4 +312,6 @@ case class BasisBlade(bitmap: Int, scale: Double) {
     else this
   }
 }
+
+
 
